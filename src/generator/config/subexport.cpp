@@ -187,6 +187,328 @@ groupGenerate(const std::string &rule, std::vector<Proxy> &nodelist, string_arra
     }
 }
 
+void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
+    YAML::Node proxies
+    for(Proxy &x : nodes)
+    {
+        YAML::Node singleproxy;
+
+        std::string type = getProxyTypeName(x.Type);
+        std::string remark, pluginopts = replaceAllDistinct(x.PluginOption, ";", "&");
+        if (ext.append_proxy_type)
+            x.Remark = "[" + type + "] " + x.Remark;
+
+        processRemark(x.Remark, remark, remarks_list, false);
+
+        tribool udp = ext.udp;
+        tribool xudp = ext.xudp;
+        tribool scv = ext.skip_cert_verify;
+        tribool tfo = ext.tfo;
+        udp.define(x.UDP);
+        xudp.define(x.XUDP);
+        scv.define(x.AllowInsecure);
+        tfo.define(x.TCPFastOpen);
+
+        singleproxy["name"] = remark;
+        singleproxy["server"] = x.Hostname;
+        singleproxy["port"] = x.Port;
+        if (!x.PublicKey.empty()){
+            singleproxy["reality-opts"]["public-key"] = x.PublicKey;
+            if (!x.ShortId.empty())
+                singleproxy["reality-opts"]["short-id"] = x.ShortId;
+        }
+        singleproxy["client-fingerprint"] = "chrome";
+        if (!x.Fingerprint.empty())
+            singleproxy["client-fingerprint"] = x.Fingerprint;
+        switch (x.Type) {
+            case ProxyType::Shadowsocks:
+                //latest clash core removed support for chacha20 encryption
+                if (ext.filter_deprecated && x.EncryptMethod == "chacha20")
+                    continue;
+                singleproxy["type"] = "ss";
+                singleproxy["cipher"] = x.EncryptMethod;
+                singleproxy["password"] = x.Password;
+                if (!tfo.is_undef())
+                    singleproxy["tfo"] = tfo.get();
+                if (std::all_of(x.Password.begin(), x.Password.end(), ::isdigit) && !x.Password.empty())
+                    singleproxy["password"].SetTag("str");
+                switch (hash_(x.Plugin)) {
+                    case "simple-obfs"_hash:
+                    case "obfs-local"_hash:
+                        singleproxy["plugin"] = "obfs";
+                        singleproxy["plugin-opts"]["mode"] = urlDecode(getUrlArg(pluginopts, "obfs"));
+                        singleproxy["plugin-opts"]["host"] = urlDecode(getUrlArg(pluginopts, "obfs-host"));
+                        break;
+                    case "v2ray-plugin"_hash:
+                        singleproxy["plugin"] = "v2ray-plugin";
+                        singleproxy["plugin-opts"]["mode"] = getUrlArg(pluginopts, "mode");
+                        singleproxy["plugin-opts"]["host"] = getUrlArg(pluginopts, "host");
+                        singleproxy["plugin-opts"]["path"] = getUrlArg(pluginopts, "path");
+                        singleproxy["plugin-opts"]["tls"] = pluginopts.find("tls") != std::string::npos;
+                        singleproxy["plugin-opts"]["mux"] = pluginopts.find("mux") != std::string::npos;
+                        if (!scv.is_undef())
+                            singleproxy["plugin-opts"]["skip-cert-verify"] = scv.get();
+                        break;
+                    case "shadow-tls"_hash:
+                        singleproxy["plugin"] = "shadow-tls";
+                        singleproxy["plugin-opts"]["host"] = getUrlArg(pluginopts, "host");
+                        singleproxy["plugin-opts"]["password"] = getUrlArg(pluginopts, "password");
+                        singleproxy["plugin-opts"]["version"] = getUrlArg(pluginopts, "version");
+                        break;
+                }
+                break;
+            case ProxyType::VMess:
+                singleproxy["type"] = "vmess";
+                singleproxy["uuid"] = x.UserId;
+                singleproxy["alterId"] = x.AlterId;
+                singleproxy["cipher"] = x.EncryptMethod;
+                singleproxy["tls"] = x.TLSSecure;
+                if (xudp && udp)
+                    singleproxy["xudp"] = true;
+                if (!tfo.is_undef())
+                    singleproxy["tfo"] = tfo.get();
+                if (!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                if (!x.ServerName.empty())
+                    singleproxy["servername"] = x.ServerName;
+                switch (hash_(x.TransferProtocol)) {
+                    case "tcp"_hash:
+                        break;
+                    case "ws"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        if (ext.clash_new_field_name) {
+                            singleproxy["ws-opts"]["path"] = x.Path;
+                            if (!x.Host.empty())
+                                singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
+                            if (!x.Edge.empty())
+                                singleproxy["ws-opts"]["headers"]["Edge"] = x.Edge;
+                        } else {
+                            singleproxy["ws-path"] = x.Path;
+                            if (!x.Host.empty())
+                                singleproxy["ws-headers"]["Host"] = x.Host;
+                            if (!x.Edge.empty())
+                                singleproxy["ws-headers"]["Edge"] = x.Edge;
+                        }
+                        break;
+                    case "http"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["http-opts"]["method"] = "GET";
+                        singleproxy["http-opts"]["path"].push_back(x.Path);
+                        if (!x.Host.empty())
+                            singleproxy["http-opts"]["headers"]["Host"].push_back(x.Host);
+                        if (!x.Edge.empty())
+                            singleproxy["http-opts"]["headers"]["Edge"].push_back(x.Edge);
+                        break;
+                    case "h2"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["h2-opts"]["path"] = x.Path;
+                        if (!x.Host.empty())
+                            singleproxy["h2-opts"]["host"].push_back(x.Host);
+                        break;
+                    case "grpc"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["servername"] = x.ServerName;
+                        singleproxy["grpc-opts"]["grpc-mode"] = x.GRPCMode;
+                        singleproxy["grpc-opts"]["grpc-service-name"] = x.GRPCServiceName;
+                        break;
+                    default:
+                        continue;
+                }
+                break;
+            case ProxyType::Hysteria:
+                singleproxy["type"] = "hysteria";
+                singleproxy["auth_str"] = x.Auth;
+                singleproxy["up"] = x.UpMbps;
+                singleproxy["down"] = x.DownMbps;
+                if (!tfo.is_undef())
+                    singleproxy["fast-open"] = tfo.get();
+                if (!x.FakeType.empty())
+                    singleproxy["protocol"] = x.FakeType;
+                if (!x.Host.empty())
+                    singleproxy["sni"] = x.Host;
+                if (!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                if (x.Insecure == "1")
+                    singleproxy["skip-cert-verify"] = true;
+                if (!x.Alpn.empty())
+                    singleproxy["alpn"].push_back(x.Alpn);
+                if (!x.OBFSParam.empty())
+                    singleproxy["obfs"] = x.OBFSParam;
+                break;
+            case ProxyType::VLESS:
+                singleproxy["type"] = "vless";
+                singleproxy["uuid"] = x.UserId;
+                singleproxy["tls"] = x.TLSSecure;
+                if (!tfo.is_undef())
+                    singleproxy["tfo"] = tfo.get();
+                if (xudp && udp)
+                    singleproxy["xudp"] = true;
+                if (!x.Host.empty())
+                    singleproxy["servername"] = x.Host;
+                if (!x.Flow.empty())
+                    singleproxy["flow"] = x.Flow;
+                if (!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                switch (hash_(x.TransferProtocol)) {
+                    case "tcp"_hash:
+                        break;
+                    case "ws"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        if (ext.clash_new_field_name) {
+                            singleproxy["ws-opts"]["path"] = x.Path;
+                            if (!x.Host.empty())
+                                singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
+                            if (!x.Edge.empty())
+                                singleproxy["ws-opts"]["headers"]["Edge"] = x.Edge;
+                        } else {
+                            singleproxy["ws-path"] = x.Path;
+                            if (!x.Host.empty())
+                                singleproxy["ws-headers"]["Host"] = x.Host;
+                            if (!x.Edge.empty())
+                                singleproxy["ws-headers"]["Edge"] = x.Edge;
+                        }
+                        break;
+                    case "http"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["http-opts"]["method"] = "GET";
+                        singleproxy["http-opts"]["path"].push_back(x.Path);
+                        if (!x.Host.empty())
+                            singleproxy["http-opts"]["headers"]["Host"].push_back(x.Host);
+                        if (!x.Edge.empty())
+                            singleproxy["http-opts"]["headers"]["Edge"].push_back(x.Edge);
+                        break;
+                    case "h2"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["h2-opts"]["path"] = x.Path;
+                        if (!x.Host.empty())
+                            singleproxy["h2-opts"]["host"].push_back(x.Host);
+                        break;
+                    case "grpc"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["grpc-opts"]["grpc-mode"] = x.GRPCMode;
+                        singleproxy["grpc-opts"]["grpc-service-name"] = x.GRPCServiceName;
+                        break;
+                    default:
+                        continue;
+                }
+                break;
+            case ProxyType::ShadowsocksR:
+                //ignoring all nodes with unsupported obfs, protocols and encryption
+                if (ext.filter_deprecated) {
+                    if (!clashR && std::find(clash_ssr_ciphers.cbegin(), clash_ssr_ciphers.cend(), x.EncryptMethod) ==
+                                   clash_ssr_ciphers.cend())
+                        continue;
+                    if (std::find(clashr_protocols.cbegin(), clashr_protocols.cend(), x.Protocol) ==
+                        clashr_protocols.cend())
+                        continue;
+                    if (std::find(clashr_obfs.cbegin(), clashr_obfs.cend(), x.OBFS) == clashr_obfs.cend())
+                        continue;
+                }
+
+                singleproxy["type"] = "ssr";
+                singleproxy["cipher"] = x.EncryptMethod == "none" ? "dummy" : x.EncryptMethod;
+                singleproxy["password"] = x.Password;
+                if(std::all_of(x.Password.begin(), x.Password.end(), ::isdigit) && !x.Password.empty())
+                    singleproxy["password"].SetTag("str");
+                singleproxy["protocol"] = x.Protocol;
+                singleproxy["obfs"] = x.OBFS;
+                if(clashR)
+                {
+                    singleproxy["protocolparam"] = x.ProtocolParam;
+                    singleproxy["obfsparam"] = x.OBFSParam;
+                }
+                else
+                {
+                    singleproxy["protocol-param"] = x.ProtocolParam;
+                    singleproxy["obfs-param"] = x.OBFSParam;
+                }
+                break;
+            case ProxyType::SOCKS5:
+                singleproxy["type"] = "socks5";
+                if(!x.Username.empty())
+                    singleproxy["username"] = x.Username;
+                if(!x.Password.empty())
+                {
+                    singleproxy["password"] = x.Password;
+                    if(std::all_of(x.Password.begin(), x.Password.end(), ::isdigit))
+                        singleproxy["password"].SetTag("str");
+                }
+                if(!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                break;
+            case ProxyType::HTTP:
+            case ProxyType::HTTPS:
+                singleproxy["type"] = "http";
+                if(!x.Username.empty())
+                    singleproxy["username"] = x.Username;
+                if(!x.Password.empty())
+                {
+                    singleproxy["password"] = x.Password;
+                    if(std::all_of(x.Password.begin(), x.Password.end(), ::isdigit))
+                        singleproxy["password"].SetTag("str");
+                }
+                singleproxy["tls"] = x.TLSSecure;
+                if(!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                break;
+            case ProxyType::Trojan:
+                singleproxy["type"] = "trojan";
+                singleproxy["password"] = x.Password;
+                if(!x.Host.empty())
+                    singleproxy["sni"] = x.Host;
+                if(std::all_of(x.Password.begin(), x.Password.end(), ::isdigit) && !x.Password.empty())
+                    singleproxy["password"].SetTag("str");
+                if(!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                switch(hash_(x.TransferProtocol))
+                {
+                    case "tcp"_hash:
+                        break;
+                    case "grpc"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        if(!x.Path.empty())
+                            singleproxy["grpc-opts"]["grpc-service-name"] = x.Path;
+                        break;
+                    case "ws"_hash:
+                        singleproxy["network"] = x.TransferProtocol;
+                        singleproxy["ws-opts"]["path"] = x.Path;
+                        if(!x.Host.empty())
+                            singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
+                        break;
+                }
+                break;
+            case ProxyType::Snell:
+                if (x.SnellVersion >= 4)
+                    continue;
+                singleproxy["type"] = "snell";
+                singleproxy["psk"] = x.Password;
+                if(x.SnellVersion != 0)
+                    singleproxy["version"] = x.SnellVersion;
+                if(!x.OBFS.empty())
+                {
+                    singleproxy["obfs-opts"]["mode"] = x.OBFS;
+                    if(!x.Host.empty())
+                        singleproxy["obfs-opts"]["host"] = x.Host;
+                }
+                if(std::all_of(x.Password.begin(), x.Password.end(), ::isdigit) && !x.Password.empty())
+                    singleproxy["password"].SetTag("str");
+                break;
+            default:
+                continue;
+        }
+
+        if (udp)
+            singleproxy["udp"] = true;
+
+        if (block)
+            singleproxy.SetStyle(YAML::EmitterStyle::Block);
+        else
+            singleproxy.SetStyle(YAML::EmitterStyle::Flow);
+        proxies.push_back(singleproxy);
+    }
+    yamlnode["proxies"] = proxies
+}
+
 void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGroupConfigs &extra_proxy_group, bool clashR, extra_settings &ext)
 {
     YAML::Node proxies, original_groups;
@@ -605,6 +927,12 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
         yamlnode["proxy-groups"] = original_groups;
     else
         yamlnode["Proxy Group"] = original_groups;
+}
+
+std::string proxyToClashProxy(std::vector<Proxy> &nodes){
+    YAML::Node yamlnode;
+    proxyToClashProxy(nodes, yamlnode);
+    return YAML::Dump(yamlnode);
 }
 
 std::string proxyToClash(std::vector<Proxy> &nodes, const std::string &base_conf,
