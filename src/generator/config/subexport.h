@@ -60,8 +60,8 @@ struct extra_settings
 
 void rulesetToClash(YAML::Node &base_rule, std::vector<RulesetContent> &ruleset_content_array, bool overwrite_original_rules, bool new_field_name);
 void rulesetToSurge(INIReader &base_rule, std::vector<RulesetContent> &ruleset_content_array, int surge_ver, bool overwrite_original_rules, std::string remote_path_prefix);
-std::string proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode);
-void proxyToClashProxy(std::vector<Proxy> &nodes);
+std::string proxyToClashProxy(std::vector<Proxy> &nodes);
+void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode);
 std::string proxyToClash(std::vector<Proxy> &nodes, const std::string &base_conf, std::vector<RulesetContent> &ruleset_content_array, const ProxyGroupConfigs &extra_proxy_group, bool clashR, extra_settings &ext);
 void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGroupConfigs &extra_proxy_group, bool clashR, extra_settings &ext);
 std::string proxyToSurge(std::vector<Proxy> &nodes, const std::string &base_conf, std::vector<RulesetContent> &ruleset_content_array, const ProxyGroupConfigs &extra_proxy_group, int surge_ver, extra_settings &ext);
