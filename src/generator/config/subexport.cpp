@@ -189,6 +189,8 @@ groupGenerate(const std::string &rule, std::vector<Proxy> &nodelist, string_arra
 
 void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
     YAML::Node proxies;
+    bool clashR = false;
+    string_array remarks_list;
     for(Proxy &x : nodes)
     {
         YAML::Node singleproxy;
@@ -200,10 +202,10 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
 
         processRemark(x.Remark, remark, remarks_list, false);
 
-        tribool udp = ext.udp;
-        tribool xudp = ext.xudp;
-        tribool scv = ext.skip_cert_verify;
-        tribool tfo = ext.tfo;
+        tribool udp(false);
+        tribool xudp(false);
+        tribool scv(false);
+        tribool tfo(false);
         udp.define(x.UDP);
         xudp.define(x.XUDP);
         scv.define(x.AllowInsecure);
@@ -223,7 +225,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
         switch (x.Type) {
             case ProxyType::Shadowsocks:
                 //latest clash core removed support for chacha20 encryption
-                if (ext.filter_deprecated && x.EncryptMethod == "chacha20")
+                if (false && x.EncryptMethod == "chacha20")
                     continue;
                 singleproxy["type"] = "ss";
                 singleproxy["cipher"] = x.EncryptMethod;
@@ -276,7 +278,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
                         break;
                     case "ws"_hash:
                         singleproxy["network"] = x.TransferProtocol;
-                        if (ext.clash_new_field_name) {
+                        if (false) {
                             singleproxy["ws-opts"]["path"] = x.Path;
                             if (!x.Host.empty())
                                 singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
@@ -354,7 +356,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
                         break;
                     case "ws"_hash:
                         singleproxy["network"] = x.TransferProtocol;
-                        if (ext.clash_new_field_name) {
+                        if (false) {
                             singleproxy["ws-opts"]["path"] = x.Path;
                             if (!x.Host.empty())
                                 singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
@@ -500,10 +502,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
         if (udp)
             singleproxy["udp"] = true;
 
-        if (block)
-            singleproxy.SetStyle(YAML::EmitterStyle::Block);
-        else
-            singleproxy.SetStyle(YAML::EmitterStyle::Flow);
+        singleproxy.SetStyle(YAML::EmitterStyle::Flow);
         proxies.push_back(singleproxy);
     };
     yamlnode["proxies"] = proxies;
