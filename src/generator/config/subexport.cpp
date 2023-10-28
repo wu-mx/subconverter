@@ -188,7 +188,7 @@ groupGenerate(const std::string &rule, std::vector<Proxy> &nodelist, string_arra
 }
 
 void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
-    YAML::Node proxies
+    YAML::Node proxies;
     for(Proxy &x : nodes)
     {
         YAML::Node singleproxy;
@@ -505,7 +505,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
         else
             singleproxy.SetStyle(YAML::EmitterStyle::Flow);
         proxies.push_back(singleproxy);
-    }
+    };
     yamlnode["proxies"] = proxies
 }
 
