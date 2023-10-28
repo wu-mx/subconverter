@@ -506,7 +506,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
             singleproxy.SetStyle(YAML::EmitterStyle::Flow);
         proxies.push_back(singleproxy);
     };
-    yamlnode["proxies"] = proxies
+    yamlnode["proxies"] = proxies;
 }
 
 void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGroupConfigs &extra_proxy_group, bool clashR, extra_settings &ext)
