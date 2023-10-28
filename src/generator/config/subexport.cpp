@@ -197,7 +197,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
 
         std::string type = getProxyTypeName(x.Type);
         std::string remark, pluginopts = replaceAllDistinct(x.PluginOption, ";", "&");
-        if (ext.append_proxy_type)
+        if (false)
             x.Remark = "[" + type + "] " + x.Remark;
 
         processRemark(x.Remark, remark, remarks_list, false);
@@ -396,7 +396,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
                 break;
             case ProxyType::ShadowsocksR:
                 //ignoring all nodes with unsupported obfs, protocols and encryption
-                if (ext.filter_deprecated) {
+                if (true) {
                     if (!clashR && std::find(clash_ssr_ciphers.cbegin(), clash_ssr_ciphers.cend(), x.EncryptMethod) ==
                                    clash_ssr_ciphers.cend())
                         continue;
