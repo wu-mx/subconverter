@@ -30,8 +30,7 @@ int main(){std::to_string(0);}
 " HAVE_TO_STRING)
 
 IF(NOT BUILD_STATIC_LIBRARY)
-
-ADD_EXECUTABLE(${BUILD_TARGET_NAME} 
+    ADD_LIBRARY(${BUILD_TARGET_NAME} SHARED
     src/generator/config/nodemanip.cpp
     src/generator/config/ruleconvert.cpp
     src/generator/config/subexport.cpp
@@ -42,6 +41,7 @@ ADD_EXECUTABLE(${BUILD_TARGET_NAME}
     src/handler/webget.cpp
     src/handler/settings.cpp
     src/main.cpp
+        src/export.cpp
     src/parser/infoparser.cpp
     src/parser/subparser.cpp
     src/script/cron.cpp
@@ -128,7 +128,10 @@ ADD_LIBRARY(${BUILD_TARGET_NAME} STATIC
     src/utils/network.cpp
     src/utils/regexp.cpp
     src/utils/string.cpp
-    src/utils/urlencode.cpp)
+    src/utils/urlencode.cpp
+        src/export.h
+        src/export.cpp)
+
 TARGET_COMPILE_DEFINITIONS(${BUILD_TARGET_NAME} PRIVATE -DNO_JS_RUNTIME -DNO_WEBGET)
 
 TARGET_INCLUDE_DIRECTORIES(${BUILD_TARGET_NAME} PUBLIC src)
