@@ -337,6 +337,24 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
                 if (!x.OBFSParam.empty())
                     singleproxy["obfs"] = x.OBFSParam;
                 break;
+            case ProxyType::Hysteria2:
+                singleproxy["type"] = "hysteria2";
+                singleproxy["password"] = x.Password;
+                if (!x.UpMbps.empty())
+                    singleproxy["up"] = x.UpMbps;
+                if (!x.DownMbps.empty())
+                    singleproxy["down"] = x.DownMbps;
+                if (!x.Host.empty())
+                    singleproxy["sni"] = x.Host;
+                if (!scv.is_undef())
+                    singleproxy["skip-cert-verify"] = scv.get();
+                if (!x.Alpn.empty())
+                    singleproxy["alpn"].push_back(x.Alpn);
+                if (!x.OBFSParam.empty())
+                    singleproxy["obfs"] = x.OBFSParam;
+                if (!x.OBFSPassword.empty())
+                    singleproxy["obfs-password"] = x.OBFSPassword;
+                break;
             case ProxyType::VLESS:
                 singleproxy["type"] = "vless";
                 singleproxy["uuid"] = x.UserId;

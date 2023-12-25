@@ -732,7 +732,7 @@ exclude=(流量|官网)
 
     > 启用 Clash 的新区块名称 (proxies, proxy-groups, rules)，设置为 true 时打开，默认为 true
 
-    -   Clash内核在v0.19.0版本时开始启用新区块名称，当前已广泛使用v0.19.0及以上的版本，除非您确定正在使用极为古老的版本，否则请勿关闭。
+    -   filter_deprecatedClash内核在v0.19.0版本时开始启用新区块名称，当前已广泛使用v0.19.0及以上的版本，除非您确定正在使用极为古老的版本，否则请勿关闭。
 
 10. **clash_proxies_style**
 
