@@ -28,9 +28,9 @@ install -m644 quickjspp.hpp /usr/include/
 cd ..
 
 git clone https://github.com/PerMalmberg/libcron --depth=1
-cp scripts/patches/libcron-add-fIPC-for-Linux64.patch libcron/libcron
+mv scripts/patches/libcron-add-fIPC-for-Linux64.patch libcron/libcron/p1.patch
 cd libcron
-patch -p0 < libcron-add-fIPC-for-Linux64.patch
+patch -p0 < p1.patch
 git submodule update --init
 cmake -DCMAKE_BUILD_TYPE=Release .
 make libcron install -j2
