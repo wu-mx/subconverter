@@ -28,7 +28,7 @@ install -m644 quickjspp.hpp /usr/include/
 cd ..
 
 git clone https://github.com/PerMalmberg/libcron --depth=1
-mv scripts/patches/CMakeLists.txt libcron/libcron/CMakeLists.txt
+cp scripts/patches/CMakeLists.txt libcron/libcron/CMakeLists.txt
 cd libcron
 git submodule update --init
 cmake -DCMAKE_BUILD_TYPE=Release .
@@ -42,6 +42,6 @@ make install -j4
 cd ..
 
 export PKG_CONFIG_PATH=/usr/lib64/pkgconfig
-cmake -DCMAKE_BUILD_TYPE=Release .
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIBRARY=ON .
 make -j2
 chmod +x libsubconverter.so
