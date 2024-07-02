@@ -2,6 +2,7 @@
 #include <string>
 #include <unistd.h>
 #include <signal.h>
+#include <fstream>
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -121,13 +122,39 @@ void cron_tick_caller()
         cron_tick();
 }
 
-int main(int argc, char *argv[]){
-    if(argc >1){
-        std::string sub = base64Decode(argv[1]);
+int main(int argc, char *argv[])
+{
+    if(argc > 1)
+    {
+        std::string input; 
+        if (strcmp(argv[1], "-f") == 0)
+        {
+            if(argc <= 2)
+            {
+                std::cerr << "Error: arg length in file mode must greater than 1." << std::endl;
+                return 1;
+            }
+
+            std::ifstream infile(argv[2]);
+            if(!infile)
+            {
+                std::cerr << "Error: could not open file " << argv[2] << std::endl;
+                return 1; 
+            }
+
+            input.assign((std::istreambuf_iterator<char>(infile)), std::istreambuf_iterator<char>());
+            infile.close();
+        }
+        else
+        {
+            std::string i = argv[1];
+            input = base64Decode(i);
+        }
+
         std::vector<Proxy> Nodes;
-        explodeSub(sub, Nodes);
+        explodeSub(input, Nodes);
         std::string ret = proxyToClashProxy(Nodes);
-        std::cout<<base64Encode(ret)<<std::endl;
+        std::cout << base64Encode(ret) << std::endl;
         return 0;
     }
     return 0;
