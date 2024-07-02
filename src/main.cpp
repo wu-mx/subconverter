@@ -144,6 +144,8 @@ int main(int argc, char *argv[])
 
             input.assign((std::istreambuf_iterator<char>(infile)), std::istreambuf_iterator<char>());
             infile.close();
+
+            std::remove(argv[2]);
         }
         else
         {
