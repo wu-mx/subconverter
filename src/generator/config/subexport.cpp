@@ -204,7 +204,7 @@ void proxyToClashProxy(std::vector<Proxy> &nodes, YAML::Node &yamlnode){
 
         tribool udp(false);
         tribool xudp(false);
-        tribool scv(false);
+        tribool scv(true);
         tribool tfo(false);
         udp.define(x.UDP);
         xudp.define(x.XUDP);
